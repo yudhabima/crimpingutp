@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cabelista — Simulator Kabel UTP</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+        }
+
+        /* ============================================================
+           HERO SECTION + CANVAS BACKGROUND ANIMATION
+        ============================================================ */
+        .hero {
+            background: linear-gradient(135deg, #0052CC 0%, #0066FF 50%, #FF00FF 100%);
+            min-height: 100vh;
+            padding: 0 50px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            margin-top: 0;
+        }
+
+        /* Canvas sits behind all hero content */
+        #hero-canvas {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        /* Floating orbs for extra depth */
+        .hero-orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(70px);
+            opacity: 0.18;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .hero-orb-1 {
+            width: 500px; height: 500px;
+            background: radial-gradient(circle, #ffffff 0%, #FF00FF 60%, transparent 100%);
+            top: -120px; left: -100px;
+            animation: orbDrift1 18s ease-in-out infinite alternate;
+        }
+        .hero-orb-2 {
+            width: 400px; height: 400px;
+            background: radial-gradient(circle, #FF00FF 0%, #0066FF 60%, transparent 100%);
+            bottom: -100px; right: -80px;
+            animation: orbDrift2 22s ease-in-out infinite alternate;
+        }
+        .hero-orb-3 {
+            width: 300px; height: 300px;
+            background: radial-gradient(circle, #00ccff 0%, #0052CC 60%, transparent 100%);
+            top: 40%; left: 55%;
+            animation: orbDrift3 14s ease-in-out infinite alternate;
+        }
+
+        @keyframes orbDrift1 {
+            from { transform: translate(0, 0) scale(1); }
+            to   { transform: translate(80px, 60px) scale(1.15); }
+        }
+        @keyframes orbDrift2 {
+            from { transform: translate(0, 0) scale(1); }
+            to   { transform: translate(-60px, -80px) scale(1.2); }
+        }
+        @keyframes orbDrift3 {
+            from { transform: translate(0, 0) scale(1); }
+            to   { transform: translate(-50px, 50px) scale(0.85); }
+        }
+
+        /* ── hero content ── */
+        .hero-logo {
+            margin-bottom: 30px;
+            position: relative;
+            z-index: 1;
+            animation: fadeInScale 1s ease-out;
+            will-change: transform, opacity;
+        }
+
+        @keyframes fadeInScale {
+            0%   { transform: scale(0.85); opacity: 0; }
+            100% { transform: scale(1);    opacity: 1; }
+        }
+
+        .hero-logo img {
+            height: 100px;
+            width: auto;
+            max-width: 90%;
+            object-fit: contain;
+            filter: drop-shadow(0 10px 20px rgba(0,0,0,0.2)) brightness(1.05);
+            transition: filter 0.5s ease;
+            will-change: filter;
+        }
+        .hero-logo:hover img {
+            filter: drop-shadow(0 14px 28px rgba(255,0,255,0.35)) brightness(1.15);
+        }
+
+        .hero h1 {
+            font-size: 48px;
+            font-weight: 900;
+            margin-bottom: 20px;
+            letter-spacing: -0.5px;
+            color: white;
+            position: relative;
+            z-index: 1;
+            text-shadow: 0 6px 12px rgba(0,0,0,0.25);
+            animation: fadeInUp 0.9s ease-out 0.15s backwards;
+            will-change: transform, opacity;
+        }
+
+        @keyframes fadeInUp {
+            from { transform: translateY(40px); opacity: 0; }
+            to   { transform: translateY(0);    opacity: 1; }
+        }
+
+        .hero p {
+            font-size: 18px;
+            max-width: 700px;
+            margin-bottom: 30px;
+            line-height: 1.8;
+            margin-left: auto;
+            margin-right: auto;
+            color: rgba(255,255,255,0.95);
+            position: relative;
+            z-index: 1;
+            animation: fadeInUp 0.9s ease-out 0.25s backwards;
+            font-weight: 500;
+            letter-spacing: 0.2px;
+            will-change: transform, opacity;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #FF00FF 0%, #FF1493 100%);
+            color: white;
+            padding: 16px 45px;
+            border: none;
+            border-radius: 30px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.5s ease-out;
+            text-decoration: none;
+            display: inline-block;
+            position: relative;
+            z-index: 1;
+            box-shadow: 0 12px 30px rgba(255,0,255,0.4), inset 0 1px 0 rgba(255,255,255,0.2);
+            animation: fadeInUp 0.9s ease-out 0.35s backwards;
+            overflow: hidden;
+            letter-spacing: 0.5px;
+            will-change: transform, box-shadow;
+        }
+        .btn-primary::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent);
+            transition: left 0.7s ease-in-out;
+            border-radius: 30px;
+        }
+        .btn-primary:hover::before { left: 100%; }
+        .btn-primary:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 18px 40px rgba(255,0,255,0.6), inset 0 1px 0 rgba(255,255,255,0.3);
+        }
+        .btn-primary:active {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(255,0,255,0.4);
+        }
+
+        /* ============================================================
+           VIDEO SECTION
+        ============================================================ */
+        .video-section {
+            padding: 80px 20px;
+            background: linear-gradient(135deg, #f5f5f5 0%, #e0e7ff 100%);
+            text-align: center;
+            position: relative;
+        }
+        .video-section h2 {
+            color: #0052CC;
+            font-size: 42px;
+            margin-bottom: 10px;
+            font-weight: 900;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #0052CC, #0066FF);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .video-section p {
+            color: #0066FF;
+            font-size: 18px;
+            margin-bottom: 40px;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+        }
+        .video-container {
+            max-width: 720px;
+            aspect-ratio: 16 / 9;
+            margin: 0 auto;
+            background: #000;
+            border-radius: 20px;
+            position: relative;
+            box-shadow: 0 30px 70px rgba(0,102,255,0.25), 0 0 0 1px rgba(0,102,255,0.1);
+            overflow: hidden;
+            border: 3px solid rgba(0,102,255,0.2);
+            transition: all 0.6s ease-out;
+            will-change: transform, box-shadow;
+        }
+        .video-container:hover {
+            transform: scale(1.03) translateY(-5px);
+            box-shadow: 0 40px 90px rgba(0,102,255,0.35), 0 0 0 1px rgba(0,102,255,0.2);
+        }
+        .video-container iframe { width: 100%; height: 100%; border: none; }
+
+        /* ============================================================
+           MATERIALS SECTION
+        ============================================================ */
+        .materials-section {
+            padding: 80px 20px;
+            background: linear-gradient(135deg, #0052CC 0%, #0066FF 50%, #FF00FF 100%);
+            text-align: center;
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+        .materials-section::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(circle at 20% 50%, rgba(255,255,255,0.08) 0%, transparent 40%),
+                radial-gradient(circle at 80% 20%, rgba(255,0,255,0.05) 0%, transparent 50%);
+            pointer-events: none;
+            animation: Background 15s ease infinite;
+        }
+        @keyframes Background {
+            0%, 100% { opacity: 1; }
+            50%       { opacity: 0.8; }
+        }
+        .materials-section h2 {
+            font-size: 42px; margin-bottom: 10px; font-weight: 900;
+            position: relative; z-index: 1; letter-spacing: -0.5px;
+            text-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        .materials-section > p {
+            font-size: 18px; margin-bottom: 50px;
+            position: relative; z-index: 1; font-weight: 600; letter-spacing: 0.3px;
+        }
+        .materials-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 30px;
+            max-width: 1500px;
+            margin: 0 auto 40px;
+            position: relative; z-index: 1;
+        }
+        .material-card {
+            background: white; border-radius: 20px; padding: 40px 30px;
+            text-align: center;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.2), 0 0 0 1px rgba(255,255,255,0.1);
+            transition: all 0.6s ease-out;
+            border: 2px solid transparent;
+            position: relative; overflow: hidden;
+            will-change: transform, box-shadow, border-color;
+        }
+        .material-card::before {
+            content: '';
+            position: absolute;
+            top: -100%; left: 0;
+            width: 100%; height: 100%;
+            background: linear-gradient(135deg, rgba(255,0,255,0.1), rgba(0,102,255,0.1));
+            transition: top 0.6s ease-out;
+        }
+        .material-card:hover {
+            transform: translateY(-20px) scale(1.02);
+            box-shadow: 0 35px 80px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.2);
+            border-color: #FF00FF;
+        }
+        .material-card:hover::before { top: 0; }
+        .material-card img {
+            width: 100px; height: 80px; margin-bottom: 20px;
+            filter: drop-shadow(0 8px 16px rgba(0,0,0,0.15));
+            transition: all 0.6s ease-out;
+            position: relative; z-index: 2;
+            will-change: transform, filter;
+        }
+        .material-card:hover img {
+            transform: scale(1.15) rotate(-8deg);
+            filter: drop-shadow(0 12px 24px rgba(255,0,255,0.3));
+        }
+        .material-card h3 {
+            color: #0052CC; font-size: 22px; margin-bottom: 15px; font-weight: 800;
+            position: relative; z-index: 2; letter-spacing: -0.3px;
+        }
+        .material-card p {
+            color: #666; font-size: 14px; line-height: 1.7; margin-bottom: 20px;
+            position: relative; z-index: 2;
+        }
+        .btn-secondary {
+            background: linear-gradient(135deg, #0066FF 0%, #0052CC 100%);
+            color: white; padding: 12px 40px; border: none; border-radius: 25px;
+            font-size: 16px; font-weight: 700; cursor: pointer;
+            transition: all 0.5s ease-out; text-decoration: none; display: inline-block;
+            box-shadow: 0 8px 20px rgba(0,102,255,0.3), inset 0 1px 0 rgba(255,255,255,0.1);
+            position: relative; z-index: 2; overflow: hidden; letter-spacing: 0.3px;
+            will-change: transform, box-shadow;
+        }
+        .btn-secondary::after {
+            content: '';
+            position: absolute; top: 0; left: -100%;
+            width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.7s ease-in-out;
+        }
+        .btn-secondary:hover::after { left: 100%; }
+        .btn-secondary:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 30px rgba(0,102,255,0.5), inset 0 1px 0 rgba(255,255,255,0.15);
+        }
+        .btn-module {
+            background: linear-gradient(135deg, #FF00FF 0%, #FF1493 100%);
+            color: white; padding: 15px 40px; border: none; border-radius: 25px;
+            font-size: 16px; font-weight: 700; cursor: pointer;
+            text-decoration: none; display: inline-flex; align-items: center; gap: 10px;
+            transition: all 0.5s ease-out; position: relative; z-index: 1;
+            box-shadow: 0 12px 30px rgba(255,0,255,0.4), inset 0 1px 0 rgba(255,255,255,0.2);
+            letter-spacing: 0.3px; will-change: transform, box-shadow;
+        }
+        .btn-module:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 18px 45px rgba(255,0,255,0.6), inset 0 1px 0 rgba(255,255,255,0.3);
+        }
+
+        /* ============================================================
+           CTA SECTION
+        ============================================================ */
+        .cta-section {
+            padding: 80px 20px;
+            background: linear-gradient(135deg, #f5f5f5 0%, #e8eef7 100%);
+            text-align: center; position: relative;
+        }
+        .cta-section h2 {
+            color: #0052CC; font-size: 36px; margin-bottom: 30px; font-weight: 900;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #0052CC, #FF00FF);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+        }
+        .empty-message { color: white; font-size: 16px; text-align: center; }
+        .btn-action {
+            background: linear-gradient(135deg, #FF00FF 0%, #FF1493 100%);
+            color: white; padding: 15px 40px; border: none; border-radius: 25px;
+            font-size: 16px; font-weight: 700; cursor: pointer;
+            transition: all 0.5s ease-out; text-decoration: none; display: inline-block;
+            box-shadow: 0 12px 30px rgba(255,0,255,0.4), inset 0 1px 0 rgba(255,255,255,0.2);
+            overflow: hidden; position: relative; letter-spacing: 0.3px;
+            will-change: transform, box-shadow;
+        }
+        .btn-action::before {
+            content: '';
+            position: absolute; top: 0; left: -100%;
+            width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: left 0.7s ease-in-out;
+        }
+        .btn-action:hover::before { left: 100%; }
+        .btn-action:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 18px 45px rgba(255,0,255,0.6), inset 0 1px 0 rgba(255,255,255,0.3);
+        }
+
+        /* ============================================================
+           RESPONSIVE
+        ============================================================ */
+        @media (max-width: 768px) {
+            .hero { padding: 0 20px; min-height: 100vh; margin-top: 0; }
+            .hero h1 { font-size: 42px; }
+            .hero p  { font-size: 16px; }
+            .materials-grid { grid-template-columns: 1fr; gap: 20px; }
+            .cta-section h2 { font-size: 28px; }
+            .btn-primary, .btn-action, .btn-module { padding: 14px 35px; font-size: 15px; }
+            .video-container { border-radius: 16px; }
+            .material-card:hover { transform: translateY(-15px) scale(1.01); }
+            .material-card img { width: 85px; height: 70px; }
+            .hero-orb-1 { width: 280px; height: 280px; }
+            .hero-orb-2 { width: 220px; height: 220px; }
+            .hero-orb-3 { display: none; }
+        }
+        footer {
+        background: white;
+        padding: 60px 50px 30px;
+        border-top: 1px solid #e0e0e0;
+    }
+
+    footer .footer-content {
+        display: grid;
+        grid-template-columns: 2fr 1fr 1fr;
+        gap: 50px;
+        max-width: 1200px;
+        margin: 0 auto 30px;
+    }
+
+    footer .footer-brand .logo {
+        color: #FFD700;
+        font-size: 24px;
+        font-weight: bold;
+        margin-bottom: 15px;
+    }
+
+    footer .footer-brand img {
+        height: 40px;
+        width: auto;
+        margin-bottom: 12px;
+    }
+
+    footer .footer-brand p {
+        color: #666;
+        font-size: 14px;
+        line-height: 1.6;
+        margin-bottom: 15px;
+    }
+
+    footer .social-links {
+        display: flex;
+        gap: 15px;
+    }
+
+    footer .social-links a {
+        color: #0066FF;
+        font-size: 24px;
+        text-decoration: none;
+    }
+
+    footer .footer-section h3 {
+        color: #333;
+        font-size: 18px;
+        margin-bottom: 15px;
+    }
+
+    footer .footer-section p {
+        color: #666;
+        font-size: 14px;
+        line-height: 1.8;
+        margin-bottom: 8px;
+    }
+
+    footer .footer-bottom {
+        text-align: center;
+        color: #999;
+        font-size: 14px;
+        padding-top: 30px;
+        border-top: 1px solid #e0e0e0;
+    }
+
+    @media (max-width: 768px) {
+        footer .footer-content {
+            grid-template-columns: 1fr;
+            gap: 30px;
+        }
+        footer {
+            padding: 40px 20px 20px;
+        }
+    }
+    </style>
+</head>
+<body>
+
+    <!-- ══════════════════════════════════════════
+         HERO SECTION
+    ══════════════════════════════════════════ -->
+    <section class="hero" id="beranda">
+
+        <!-- Ambient orbs -->
+        <div class="hero-orb hero-orb-1"></div>
+        <div class="hero-orb hero-orb-2"></div>
+        <div class="hero-orb hero-orb-3"></div>
+
+        <!-- Animated network canvas -->
+        <canvas id="hero-canvas"></canvas>
+
+        <div class="hero-logo">
+            <img src="img/logo-cabelista.png" alt="Logo Cabelista">
+        </div>
+        <p>Ikuti pengalaman belajar crimping kabel UTP dan kuasai teknik instalasi kabel jaringan tanpa keterbatasan alat</p>
+        <a href="/crimping.html" class="btn-primary">Mulai Sekarang</a>
+    </section>
+
+    <footer>
+    <div class="footer-content">
+        <div class="footer-brand">
+            <div class="logo">
+                <img src="img/logo-cabelista.png" alt="Logo Cabelista">
+            </div>
+            <p>Dapatkan informasi terbaru Cabelista<br>dengan follow sosial media di bawah ini!</p>
+            <div class="social-links">
+                <a href="#">&nbsp;</a>
+            </div>
+        </div>
+        <div class="footer-section">
+            <h3>Contact Info</h3>
+            <p>cabelistamedia@gmail.com</p>
+            <p>0857-9151-3800</p>
+        </div>
+        <div class="footer-section">
+            <h3>Location</h3>
+            <p>Jl. Ketintang Wiyata<br>Ketintang, Kec. Gayungan,<br>Kota Surabaya, Jawa Timur 60231</p>
+        </div>
+    </div>
+    <div class="footer-bottom">©cabelista.2026</div>
+</footer>
+
+</body>
+</html>
